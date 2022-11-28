@@ -48,6 +48,7 @@ typedef enum ImageFormat {
     IMAGE_FORMAT_RGBA32F,
 } ImageFormat;
 
+typedef uint32_t bool32;
 typedef struct Image Image;
 
 ALIMER_IMAGE_API Image* Image_FromMemory(const uint8_t* data, uint32_t size);
@@ -56,6 +57,11 @@ ALIMER_IMAGE_API void Image_Destroy(Image* image);
 ALIMER_IMAGE_API uint32_t Image_GetBaseWidth(Image* image);
 ALIMER_IMAGE_API uint32_t Image_GetBaseHeight(Image* image);
 ALIMER_IMAGE_API uint32_t Image_GetBaseDepth(Image* image);
+ALIMER_IMAGE_API uint32_t Image_GetNumLevels(Image* image);
+ALIMER_IMAGE_API uint32_t Image_GetNumLayers(Image* image);
+ALIMER_IMAGE_API uint32_t Image_GetNumFaces(Image* image);
 ALIMER_IMAGE_API ImageFormat Image_GetFormat(Image* image);
+ALIMER_IMAGE_API bool32 Image_IsArray(Image* image);
+ALIMER_IMAGE_API bool32 Image_IsCubemap(Image* image);
 
 #endif /* _ALIMER_IMAGE_H */

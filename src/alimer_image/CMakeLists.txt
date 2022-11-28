@@ -12,4 +12,4 @@ if (BUILD_SHARED_LIBS)
     target_compile_definitions (${TARGET_NAME} PRIVATE ALIMER_IMAGE_SHARED_LIBRARY=1)
 endif ()
 
-target_link_libraries(${TARGET_NAME} PRIVATE stb)
+target_link_libraries(${TARGET_NAME} PRIVATE stb libktx)
