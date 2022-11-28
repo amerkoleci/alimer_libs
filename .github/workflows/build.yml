@@ -44,10 +44,10 @@ jobs:
 
     - name: Package Windows
       run: |
-        mkdir bin/win-x64
-        mkdir bin/win-arm64
-        mkdir bin/win10-x64
-        mkdir bin/win10-arm64
+        mkdir bin/win-x64/native
+        mkdir bin/win-arm64/native
+        mkdir bin/win10-x64/native
+        mkdir bin/win10-arm64/native
         mv build_win_64\bin\Release\alimer_image.dll bin/win-x64/native
         mv build_win_arm64\bin\Release\alimer_image.dll bin/win-arm64/native
         mv build_uwp_x64\bin\Release\alimer_image.dll bin/win10-x64/native
