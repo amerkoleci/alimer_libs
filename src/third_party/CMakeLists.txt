@@ -5,7 +5,9 @@ target_include_directories(stb INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
 # libktx
 set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
 
-set(KTX_SOURCES  
+set(KTX_SOURCES
+    ${KTX_DIR}/include/ktx.h
+
     ${KTX_DIR}/lib/checkheader.c
     ${KTX_DIR}/lib/dfdutils/createdfd.c
     ${KTX_DIR}/lib/dfdutils/colourspaces.c
@@ -53,11 +55,12 @@ set(KTX_SOURCES
     ${KTX_DIR}/lib/texture2.h
 )
 
-add_library(libktx ${KTX_SOURCES})
+add_library(libktx STATIC ${KTX_SOURCES})
 target_compile_definitions(libktx PUBLIC LIBKTX)
-if (WIN32)
-    target_compile_definitions(libktx PUBLIC "KTX_API=__declspec(dllexport)")
-endif()
+#if (WIN32)
+#    target_compile_definitions(libktx PUBLIC "KTX_API=__declspec(dllexport)")
+#endif()
+target_compile_definitions(libktx PUBLIC KHRONOS_STATIC=0)
 target_compile_definitions(libktx PUBLIC KTX_FEATURE_WRITE=0)
 target_compile_definitions(libktx PUBLIC BASISD_SUPPORT_KTX2_ZSTD=0)
 target_compile_definitions(libktx PUBLIC BASISU_NO_ITERATOR_DEBUG_LEVEL)

@@ -23,7 +23,7 @@ struct Image {
     bool32   isArray;
     bool32   isCubemap;
 
-    uint32_t dataSize;
+    size_t dataSize;
     uint8_t* pData;
 };
 
@@ -44,17 +44,17 @@ static Image* Image_CreateNew(uint32_t width, uint32_t height, ImageFormat forma
     return result;
 }
 
-static Image* dds_load_from_memory(const uint8_t* data, uint32_t size)
+static Image* dds_load_from_memory(const uint8_t* data, size_t size)
 {
     return NULL;
 }
 
-static Image* astc_load_from_memory(const uint8_t* data, uint32_t size)
+static Image* astc_load_from_memory(const uint8_t* data, size_t size)
 {
     return NULL;
 }
 
-static Image* ktx_load_from_memory(const uint8_t* data, uint32_t size)
+static Image* ktx_load_from_memory(const uint8_t* data, size_t size)
 {
     ktxTexture* ktx_texture = 0;
     KTX_error_code ktx_result = ktxTexture_CreateFromMemory(
@@ -94,19 +94,19 @@ static Image* ktx_load_from_memory(const uint8_t* data, uint32_t size)
     result->isArray = ktx_texture->isArray;
     result->isCubemap = ktx_texture->isCubemap;
 
-    result->dataSize = (uint32_t)ktx_texture->dataSize;
+    result->dataSize = ktx_texture->dataSize;
     result->pData = (uint8_t*)malloc(ktx_texture->dataSize);
     memcpy(result->pData, ktx_texture->pData, ktx_texture->dataSize);
     ktxTexture_Destroy(ktx_texture);
     return result;
 }
 
-static Image* stb_load_from_memory(const uint8_t* data, uint32_t size)
+static Image* stb_load_from_memory(const uint8_t* data, size_t size)
 {
     int width, height, channels;
     ImageFormat format = IMAGE_FORMAT_RGBA8;
     void* image_data;
-    uint32_t memorySize = 0;
+    size_t memorySize = 0;
     if (stbi_is_16_bit_from_memory(data, (int)size))
     {
         image_data = stbi_load_16_from_memory(data, (int)size, &width, &height, &channels, 0);
@@ -153,7 +153,7 @@ static Image* stb_load_from_memory(const uint8_t* data, uint32_t size)
     return result;
 }
 
-Image* Image_FromMemory(const uint8_t* data, uint32_t size)
+Image* Image_FromMemory(const uint8_t* data, size_t size)
 {
     Image* image = NULL;
 
@@ -223,4 +223,12 @@ bool32 Image_IsArray(Image* image) {
 
 bool32 Image_IsCubemap(Image* image) {
     return image->isCubemap;
+}
+
+uint8_t* Image_GetData(Image* image) {
+    return image->pData;
+}
+
+size_t Image_GetDataSize(Image* image) {
+    return image->dataSize;
 }
