@@ -1,0 +1,91 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Configure Win64
+      run: cmake . -G "Visual Studio 17 2022" -A x64 -Bbuild_win_64 -DCMAKE_BUILD_TYPE:String=Release
+    - name: Build Win64
+      run: cmake --build build_win_64 --config Release
+
+    - name: Configure Win64 ARM64
+      run: cmake . -G "Visual Studio 17 2022" -A ARM64 -Bbuild_win_arm64 -DCMAKE_BUILD_TYPE:String=Release
+    - name: Build Win64
+      run: cmake --build build_win_arm64 --config Release      
+
+    # UWP
+    - name: Configure UWP ARM64
+      run: cmake . -G "Visual Studio 17 2022" -A ARM64 -Bbuild_uwp_arm64 -DCMAKE_SYSTEM_NAME:String=WindowsStore -DCMAKE_SYSTEM_VERSION:String="10.0" -DCMAKE_BUILD_TYPE:String=Release
+    - name: Build UWP ARM64
+      run: cmake --build build_uwp_arm64 --config Release
+
+    - name: Configure UWP x64
+      run: cmake . -G "Visual Studio 17 2022" -A x64 -Bbuild_uwp_x64 -DCMAKE_SYSTEM_NAME:String=WindowsStore -DCMAKE_SYSTEM_VERSION:String="10.0" -DCMAKE_BUILD_TYPE:String=Release
+    - name: Build UWP x64
+      run: cmake --build build_uwp_x64 --config Release
+
+    - name: Package Windows
+      run: |
+        mkdir bin/win-x64
+        mkdir bin/win-arm64
+        mkdir bin/win10-x64
+        mkdir bin/win10-arm64
+        mv build_win_64\bin\Release\alimer_image.dll bin/win-x64
+        mv build_win_arm64\bin\Release\alimer_image.dll bin/win-arm64
+        mv build_uwp_x64\bin\Release\alimer_image.dll bin/win10-x64
+        mv build_uwp_arm64\bin\Release\alimer_image.dll bin/win10-arm64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: libs_windows
+        path: bin
+
+  combine:
+    name: combine artifacts
+    runs-on: ubuntu-20.04
+    needs: [windows]
+    steps:
+      - name: download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: artifacts
+      - name: combine
+        run: |
+          mkdir native_libs
+          cp -r artifacts/libs_windows/* native_libs
+      - uses: edgarrc/action-7z@v1
+        with:
+          args: 7z a -t7z native_libs.7z ./native_libs/
+      - uses: AButler/upload-release-assets@v2.0
+        if: github.event_name == 'release' && github.event.action == 'created'
+        with:
+          files: native_libs.zip
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: 'Build Artifacts'
+          path: native_libs.7z
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: |
+            libs_windows

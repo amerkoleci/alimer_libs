@@ -1,2 +1,3 @@
-# vortice_libs
+# Alimer Native libs
+
 Collection of C/C++ native libraries
