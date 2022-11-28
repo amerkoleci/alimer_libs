@@ -50,7 +50,12 @@ typedef enum ImageFormat {
 
 typedef struct Image Image;
 
-ALIMER_IMAGE_API Image* image_load_from_memory(const uint8_t* data, uint32_t size);
-ALIMER_IMAGE_API void image_destroy(Image* image);
+ALIMER_IMAGE_API Image* Image_FromMemory(const uint8_t* data, uint32_t size);
+ALIMER_IMAGE_API void Image_Destroy(Image* image);
+
+ALIMER_IMAGE_API uint32_t Image_GetBaseWidth(Image* image);
+ALIMER_IMAGE_API uint32_t Image_GetBaseHeight(Image* image);
+ALIMER_IMAGE_API uint32_t Image_GetBaseDepth(Image* image);
+ALIMER_IMAGE_API ImageFormat Image_GetFormat(Image* image);
 
 #endif /* _ALIMER_IMAGE_H */

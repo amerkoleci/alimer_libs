@@ -12,12 +12,11 @@
 #include "stb_image.h"
 
 struct Image {
-    uint32_t width;
-    uint32_t height;
-    uint32_t depth;
+    uint32_t baseWidth;
+    uint32_t baseHeight;
+    uint32_t baseDepth;
     ImageFormat format;
     uint32_t numLevels;
-    uint32_t flags;
 
     uint32_t dataSize;
     uint8_t* pData;
@@ -71,20 +70,21 @@ static Image* stb_load_from_memory(const uint8_t* data, uint32_t size)
         format = IMAGE_FORMAT_RGBA32F;
         memorySize = width * height * 4 * sizeof(float);
     }
-    else {
+    else
+    {
         image_data = stbi_load_from_memory(data, (int)size, &width, &height, NULL, 4);
         format = IMAGE_FORMAT_RGBA8;
         memorySize = width * height * 4 * sizeof(uint8_t);
     }
 
-    if (!data) {
+    if (!image_data) {
         return NULL;
     }
 
     Image* result = (Image*)malloc(sizeof(Image));
-    result->width = width;
-    result->height = height;
-    result->depth = 1;
+    result->baseWidth = width;
+    result->baseHeight = height;
+    result->baseDepth = 1;
     result->numLevels = 1;
     result->format = format;
     result->dataSize = memorySize;
@@ -94,19 +94,30 @@ static Image* stb_load_from_memory(const uint8_t* data, uint32_t size)
     return result;
 }
 
-Image* image_load_from_memory(const uint8_t* data, uint32_t size)
+Image* Image_FromMemory(const uint8_t* data, uint32_t size)
 {
     Image* image = NULL;
 
-    if ((image = dds_load_from_memory(data, size)) != NULL) return image;
-    if ((image = astc_load_from_memory(data, size)) != NULL) return image;
-    if ((image = ktx_load_from_memory(data, size)) != NULL) return image;
-    if ((image = stb_load_from_memory(data, size)) != NULL) return image;
+    if ((image = dds_load_from_memory(data, size)) != NULL) {
+        return image;
+    }
+
+    if ((image = astc_load_from_memory(data, size)) != NULL) {
+        return image;
+    }
+
+    if ((image = ktx_load_from_memory(data, size)) != NULL) {
+        return image;
+    }
+
+    if ((image = stb_load_from_memory(data, size)) != NULL) {
+        return image;
+    }
 
     return NULL;
 }
 
-void image_destroy(Image* image)
+void Image_Destroy(Image* image)
 {
     if (image)
     {
@@ -117,4 +128,20 @@ void image_destroy(Image* image)
 
         free(image);
     }
+}
+
+uint32_t Image_GetBaseWidth(Image* image) {
+    return image->baseWidth;
+}
+
+uint32_t Image_GetBaseHeight(Image* image) {
+    return image->baseHeight;
+}
+
+uint32_t Image_GetBaseDepth(Image* image) {
+    return image->baseDepth;
+}
+
+ImageFormat Image_GetFormat(Image* image) {
+    return image->format;
 }
