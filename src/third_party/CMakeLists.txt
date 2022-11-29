@@ -73,3 +73,5 @@ target_include_directories(libktx PRIVATE
     ${KTX_DIR}/other_include
     ${KTX_DIR}/utils
 )
+
+set_property(TARGET libktx PROPERTY FOLDER "ThirdParty")

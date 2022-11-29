@@ -13,17 +13,17 @@
 #include <ktx.h>
 
 struct Image {
-    uint32_t baseWidth;
-    uint32_t baseHeight;
-    uint32_t baseDepth;
+    ImageDimension dimension;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depthOrArrayLayers;
     ImageFormat format;
     uint32_t numLevels;
-    uint32_t numLayers;
     uint32_t numFaces;
     bool32   isArray;
     bool32   isCubemap;
 
-    size_t dataSize;
+    uint32_t dataSize;
     uint8_t* pData;
 };
 
@@ -31,11 +31,11 @@ static Image* Image_CreateNew(uint32_t width, uint32_t height, ImageFormat forma
     Image* result = (Image*)malloc(sizeof(Image));
     assert(image);
     memset(result, 0, sizeof(Image));
-    result->baseWidth = width;
-    result->baseHeight = height;
-    result->baseDepth = 1;
+    result->dimension = IMAGE_DIMENSION_2D;
+    result->width = width;
+    result->height = height;
+    result->depthOrArrayLayers = 1;
     result->numLevels = 1;
-    result->numLayers = 1;
     result->numFaces = 1;
     result->format = format;
     result->isArray = false;
@@ -87,14 +87,23 @@ static Image* ktx_load_from_memory(const uint8_t* data, size_t size)
     }
 
     Image* result = Image_CreateNew(ktx_texture->baseWidth, ktx_texture->baseHeight, format);
-    result->baseDepth = ktx_texture->baseDepth;
+    if (ktx_texture->baseDepth > 1)
+    {
+        result->dimension = IMAGE_DIMENSION_3D;
+        result->depthOrArrayLayers = ktx_texture->baseDepth;
+    }
+    else
+    {
+        result->dimension = IMAGE_DIMENSION_2D;
+        result->depthOrArrayLayers = ktx_texture->numLayers;
+    }
+
     result->numLevels = ktx_texture->numLevels;
-    result->numLayers = ktx_texture->numLayers;
     result->numFaces = ktx_texture->numFaces;
     result->isArray = ktx_texture->isArray;
     result->isCubemap = ktx_texture->isCubemap;
 
-    result->dataSize = ktx_texture->dataSize;
+    result->dataSize = (uint32_t)ktx_texture->dataSize;
     result->pData = (uint8_t*)malloc(ktx_texture->dataSize);
     memcpy(result->pData, ktx_texture->pData, ktx_texture->dataSize);
     ktxTexture_Destroy(ktx_texture);
@@ -106,7 +115,7 @@ static Image* stb_load_from_memory(const uint8_t* data, size_t size)
     int width, height, channels;
     ImageFormat format = IMAGE_FORMAT_RGBA8;
     void* image_data;
-    size_t memorySize = 0;
+    uint32_t memorySize = 0;
     if (stbi_is_16_bit_from_memory(data, (int)size))
     {
         image_data = stbi_load_16_from_memory(data, (int)size, &width, &height, &channels, 0);
@@ -189,24 +198,18 @@ void Image_Destroy(Image* image)
     }
 }
 
-uint32_t Image_GetBaseWidth(Image* image) {
-    return image->baseWidth;
-}
+void Image_GetMetadata(Image* image, ImageMetadata* pMetadata) {
+    assert(image);
+    assert(pMetadata);
 
-uint32_t Image_GetBaseHeight(Image* image) {
-    return image->baseHeight;
-}
-
-uint32_t Image_GetBaseDepth(Image* image) {
-    return image->baseDepth;
+    pMetadata->dimension = image->dimension;
+    pMetadata->width = image->width;
+    pMetadata->height = image->height;
+    pMetadata->depthOrArrayLayers = image->depthOrArrayLayers;
 }
 
 uint32_t Image_GetNumLevels(Image* image) {
     return image->numLevels;
-}
-
-uint32_t Image_GetNumLayers(Image* image) {
-    return image->numLayers;
 }
 
 uint32_t Image_GetNumFaces(Image* image) {
@@ -229,6 +232,6 @@ uint8_t* Image_GetData(Image* image) {
     return image->pData;
 }
 
-size_t Image_GetDataSize(Image* image) {
+uint32_t Image_GetDataSize(Image* image) {
     return image->dataSize;
 }
