@@ -38,7 +38,7 @@ jobs:
         mkdir bin/win-arm64
         mv win-x64-sdk\bin\*.dll bin/win-x64
         mv win-arm64-sdk\bin\*.dll bin/win-arm64
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: libs_windows
         path: bin
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [windows, linux, macos]
     steps:
-      - name: download artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -112,7 +112,7 @@ jobs:
           
       - uses: edgarrc/action-7z@v1
         with:
-          args: 7z a -t7z native_libs.7z ./native_libs/
+          args: 7z a -t7z -mx=9 native_libs.7z ./native_libs/
       - uses: AButler/upload-release-assets@v2.0
         if: github.event_name == 'release' && github.event.action == 'created'
         with:
