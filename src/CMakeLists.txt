@@ -7,3 +7,4 @@ target_sources(alimer_common INTERFACE
 
 # image library
 add_subdirectory(alimer_image)
+add_subdirectory(alimer_audio)

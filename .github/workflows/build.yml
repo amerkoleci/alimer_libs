@@ -84,8 +84,8 @@ jobs:
 
     - name: Package macos
       run: |
-        mkdir -p bin/osx-universal
-        mv osx-universal-sdk/lib/*.dylib bin/osx-universal
+        mkdir -p bin/osx
+        mv osx-universal-sdk/lib/*.dylib bin/osx
     - uses: actions/upload-artifact@v4
       with:
         name: libs_osx
