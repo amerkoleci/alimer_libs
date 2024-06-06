@@ -13,20 +13,43 @@ ALIMER_DISABLE_WARNINGS()
 #define MA_ENABLE_COREAUDIO
 #define MA_ENABLE_OPENSL
 #define MA_ENABLE_WEBAUDIO
-#define MA_ENGINE_MAX_LISTENERS ALIMER_AUDIO_MAX_LISTENERS
+//#define MA_ENGINE_MAX_LISTENERS ALIMER_AUDIO_MAX_LISTENERS
 #include "third_party/miniaudio.h"
 #include "third_party/miniaudio_libvorbis.h"
 #include "third_party/miniaudio_qoa.h"
 ALIMER_ENABLE_WARNINGS()
 
-static struct {
-    Bool32 initialized;
-    AudioConfig config;
-    ma_engine* engine;
-} state;
+static Vector3 ToVector3(ma_vec3f v)
+{
+    Vector3 value = { v.x, v.y, v.z };
+    return value;
+}
+
+static AudioFormat ToFormat(ma_format format)
+{
+    switch (format)
+    {
+        case ma_format_u8:
+            return AudioFormat_U8;
+
+        case ma_format_s16:
+            return AudioFormat_S16;
+
+        case ma_format_s24:
+            return AudioFormat_S24;
+
+        case ma_format_s32:
+            return AudioFormat_S32;
+
+        case ma_format_f32:
+            return AudioFormat_F32;
+
+        default:
+            return AudioFormat_Unknown;
+    }
+}
 
 // begin Vorbis
-
 static ma_result ma_decoding_backend_init__libvorbis(void* pUserData, ma_read_proc onRead, ma_seek_proc onSeek, ma_tell_proc onTell, void* pReadSeekTellUserData, const ma_decoding_backend_config* pConfig, const ma_allocation_callbacks* pAllocationCallbacks, ma_data_source** ppBackend)
 {
     ma_result result;
@@ -175,6 +198,12 @@ void alimerAudioGetVersion(int* major, int* minor, int* patch)
     if (patch) *patch = ALIMER_AUDIO_VERSION_PATCH;
 }
 
+static struct {
+    Bool32 initialized;
+    AudioConfig config;
+    ma_engine* engine;
+} state;
+
 Bool32 alimerAudioInit(const AudioConfig* config)
 {
     if (state.initialized) {
@@ -209,6 +238,12 @@ Bool32 alimerAudioInit(const AudioConfig* config)
 
     /* Once we have a resource manager we can create the engine. */
     engineConfig = ma_engine_config_init();
+    if (config->listenerCount != 0)
+    {
+        engineConfig.listenerCount = config->listenerCount;
+    }
+    engineConfig.channels = config->channels;
+    engineConfig.sampleRate = config->sampleRate;
     engineConfig.pResourceManager = resourceManager;
 
     if (ma_engine_init(&engineConfig, state.engine) != MA_SUCCESS)
@@ -243,4 +278,241 @@ Bool32 alimerAudioResume(void)
 Bool32 alimerAudioSuspend(void)
 {
     return ma_engine_stop(state.engine) == MA_SUCCESS;
+}
+
+uint32_t alimerAudioGetChannels(void)
+{
+    return ma_engine_get_channels(state.engine);
+}
+
+uint32_t alimerAudioGetSampleRate(void)
+{
+    return ma_engine_get_sample_rate(state.engine);
+}
+
+float alimerAudioGetMasterVolume(void)
+{
+    return ma_engine_get_volume(state.engine);
+}
+
+Bool32 alimerAudioSetMasterVolume(float volume)
+{
+    return ma_engine_set_volume(state.engine, volume) == MA_SUCCESS;
+}
+
+uint64_t alimerAudioGetTimePcmFrames(void)
+{
+    return ma_engine_get_time_in_pcm_frames(state.engine);
+}
+
+void alimerAudioSetTimePcmFrames(uint64_t value)
+{
+    ma_engine_set_time_in_pcm_frames(state.engine, (ma_uint64)value);
+}
+
+uint32_t alimerAudioGetListenerCount(void)
+{
+    return ma_engine_get_listener_count(state.engine);
+}
+
+Bool32 alimerAudioListenerGetEnabled(uint32_t index)
+{
+    return ma_engine_listener_is_enabled(state.engine, index);
+}
+
+void alimerAudioListenerSetEnabled(uint32_t index, Bool32 value)
+{
+    ma_engine_listener_set_enabled(state.engine, index, value);
+}
+
+void alimerAudioListenerGetPosition(uint32_t index, Vector3* result)
+{
+    *result = ToVector3(ma_engine_listener_get_position(state.engine, index));
+}
+
+void alimerAudioListenerSetPosition(uint32_t index, const Vector3* value)
+{
+    ma_engine_listener_set_position(state.engine, index, value->x, value->y, value->z);
+}
+
+void alimerAudioListenerGetVelocity(uint32_t index, Vector3* result)
+{
+    *result = ToVector3(ma_engine_listener_get_velocity(state.engine, index));
+}
+
+void alimerAudioListenerSetVelocity(uint32_t index, const Vector3* value)
+{
+    ma_engine_listener_set_velocity(state.engine, index, value->x, value->y, value->z);
+}
+
+void alimerAudioListenerGetDirection(uint32_t index, Vector3* result)
+{
+    *result = ToVector3(ma_engine_listener_get_direction(state.engine, index));
+}
+
+void alimerAudioListenerSetDirection(uint32_t index, const Vector3* value)
+{
+    ma_engine_listener_set_direction(state.engine, index, value->x, value->y, value->z);
+}
+
+void alimerAudioListenerGetCone(uint32_t index, float* pInnerAngleInRadians, float* pOuterAngleInRadians, float* pOuterGain)
+{
+    ma_engine_listener_get_cone(state.engine, index, pInnerAngleInRadians, pOuterAngleInRadians, pOuterGain);
+}
+
+void alimerAudioListenerSetCone(uint32_t index, float innerAngleInRadians, float outerAngleInRadians, float outerGain)
+{
+    ma_engine_listener_set_cone(state.engine, index, innerAngleInRadians, outerAngleInRadians, outerGain);
+}
+
+void alimerAudioListenerGetWorldUp(uint32_t index, Vector3* result)
+{
+    *result = ToVector3(ma_engine_listener_get_world_up(state.engine, index));
+}
+
+void alimerAudioListenerSetWorldUp(uint32_t index, const Vector3* value)
+{
+    ma_engine_listener_set_world_up(state.engine, index, value->x, value->y, value->z);
+}
+
+void* alimerAudioDecode(void* data, size_t length, AudioFormat* format, uint32_t* channels, uint32_t* sampleRate, uint64_t* decodedFrameCount)
+{
+    void* frames = NULL;
+    ma_decoder_config config = ma_decoder_config_init(*format, *channels, *sampleRate);
+    config.pCustomBackendUserData = NULL;  /* In this example our backend objects are contained within a ma_decoder_ex object to avoid a malloc. Our vtables need to know about this. */
+    config.ppCustomBackendVTables = pCustomBackendVTables;
+    config.customBackendCount = sizeof(pCustomBackendVTables) / sizeof(pCustomBackendVTables[0]);
+
+    ma_decode_memory(data, length, &config, decodedFrameCount, &frames);
+    *format = ToFormat(config.format);
+    *channels = config.channels;
+    *sampleRate = config.sampleRate;
+    return frames;
+}
+
+void alimerAudioFree(void* data)
+{
+    ma_free(data, NULL);
+}
+
+void alimerAudioRegisterEncodedData(const char* name, void* data, size_t length)
+{
+    ma_resource_manager* manager = ma_engine_get_resource_manager(state.engine);
+    ma_resource_manager_register_encoded_data(manager, name, data, length);
+}
+
+void alimerAudioRegisterDecodedData(const char* name, const void* data, uint64_t frameCount, AudioFormat format, uint32_t channels, uint32_t sampleRate)
+{
+    ma_resource_manager* manager = ma_engine_get_resource_manager(state.engine);
+    ma_resource_manager_register_decoded_data(manager, name, data, frameCount, format, channels, sampleRate);
+}
+
+void alimerAudioUnregisterData(const char* name)
+{
+    ma_resource_manager* manager = ma_engine_get_resource_manager(state.engine);
+    ma_resource_manager_unregister_data(manager, name);
+}
+
+Sound* alimerSoundCreate(const char* path, uint32_t flags, SoundGroup* soundGroup)
+{
+    ma_sound* sound = ma_malloc(sizeof(ma_sound), NULL);
+
+    if (MA_SUCCESS != ma_sound_init_from_file(state.engine, path, flags, (ma_sound_group*)soundGroup, NULL, sound))
+    {
+        //alimerLogError("Unable to create Sound from file");
+        ma_free(sound, NULL);
+        return NULL;
+    }
+
+    return (Sound*)sound;
+}
+
+void alimerSoundDestroy(Sound* sound)
+{
+    ma_sound_uninit((ma_sound*)sound);
+    ma_free((ma_sound*)sound, NULL);
+}
+
+void alimerSoundPlay(Sound* sound)
+{
+    ma_sound_start((ma_sound*)sound);
+}
+
+void alimerSoundStop(Sound* sound)
+{
+    ma_sound_stop((ma_sound*)sound);
+}
+
+void alimerSoundGetDataFormat(Sound* sound, AudioFormat* format, uint32_t* channels, uint32_t* sampleRate)
+{
+    ma_sound_get_data_format((ma_sound*)sound, format, channels, sampleRate, NULL, 0);
+}
+
+uint64_t alimerSoundGetLengthPcmFrames(Sound* sound)
+{
+    ma_uint64 value = 0;
+    ma_sound_get_length_in_pcm_frames((ma_sound*)sound, &value);
+    return (uint64_t)value;
+}
+
+uint64_t alimerSoundGetCursorPcmFrames(Sound* sound)
+{
+    ma_uint64 value = 0;
+    ma_sound_get_cursor_in_pcm_frames((ma_sound*)sound, &value);
+    return (uint64_t)value;
+}
+
+void alimerSoundSetCursorPcmFrames(Sound* sound, uint64_t value)
+{
+    ma_sound_seek_to_pcm_frame((ma_sound*)sound, (ma_uint64)value);
+}
+
+Bool32 alimerSoundGetPlaying(Sound* sound)
+{
+    return ma_sound_is_playing((ma_sound*)sound);
+}
+
+Bool32 alimerSoundGetFinished(Sound* sound)
+{
+    return ma_sound_at_end((ma_sound*)sound);
+}
+
+Bool32 alimerSoundGetLooping(Sound* sound)
+{
+    return ma_sound_is_looping((ma_sound*)sound);
+}
+
+void alimerSoundSetLooping(Sound* sound, Bool32 value)
+{
+    ma_sound_set_looping((ma_sound*)sound, value);
+}
+
+float alimerSoundGetVolume(Sound* sound)
+{
+    return ma_sound_get_volume((ma_sound*)sound);
+}
+
+void alimerSoundSetVolume(Sound* sound, float value)
+{
+    ma_sound_set_volume((ma_sound*)sound, value);
+}
+
+float alimerSoundGetPitch(Sound* sound)
+{
+    return ma_sound_get_pitch((ma_sound*)sound);
+}
+
+void alimerSoundSetPitch(Sound* sound, float value)
+{
+    ma_sound_set_pitch((ma_sound*)sound, value);
+}
+
+float alimerSoundGetPan(Sound* sound)
+{
+    return ma_sound_get_pan((ma_sound*)sound);
+}
+
+void alimerSoundSetPan(Sound* sound, float value)
+{
+    ma_sound_set_pan((ma_sound*)sound, value);
 }
