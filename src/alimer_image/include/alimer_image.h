@@ -30,10 +30,10 @@
 
 #define ALIMER_IMAGE_API _ALIMER_IMAGE_EXTERN _ALIMER_IMAGE_EXPORT 
 
-#include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
-typedef uint32_t Bool32;
 typedef struct AlimerImage AlimerImage;
 
 typedef enum PixelFormat {
@@ -194,9 +194,9 @@ typedef struct ImageDesc {
 
 ALIMER_IMAGE_API AlimerImage* AlimerImage_Create2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t arrayLayers, uint32_t mipLevelCount);
 ALIMER_IMAGE_API AlimerImage* AlimerImage_CreateFromMemory(const uint8_t* data, size_t size);
-ALIMER_IMAGE_API void AlimerImage_Destroy(AlimerImage* image);
+ALIMER_IMAGE_API void alimerImageDestroy(AlimerImage* image);
 
-ALIMER_IMAGE_API void AlimerImage_GetDesc(AlimerImage* image, ImageDesc* pDesc);
+ALIMER_IMAGE_API void alimerImageGetDesc(AlimerImage* image, ImageDesc* pDesc);
 ALIMER_IMAGE_API ImageDimension AlimerImage_GetDimension(AlimerImage* image);
 ALIMER_IMAGE_API PixelFormat AlimerImage_GetFormat(AlimerImage* image);
 ALIMER_IMAGE_API uint32_t AlimerImage_GetWidth(AlimerImage* image, uint32_t level);
@@ -208,6 +208,6 @@ ALIMER_IMAGE_API void* AlimerImage_GetData(AlimerImage* image, size_t* size);
 
 typedef void (*AlimerImageSaveCallback)(AlimerImage* image, void* pData, uint32_t dataSize);
 
-ALIMER_IMAGE_API Bool32 AlimerImage_Save(AlimerImage* image, ImageFileFormat format, int quality, AlimerImageSaveCallback callback);
+ALIMER_IMAGE_API bool alimerImageSave(AlimerImage* image, ImageFileFormat format, int quality, AlimerImageSaveCallback callback);
 
 #endif /* _ALIMER_IMAGE_H */

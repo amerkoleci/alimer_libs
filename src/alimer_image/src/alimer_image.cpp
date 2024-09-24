@@ -283,7 +283,6 @@ AlimerImage* AlimerImage_CreateFromMemory(const uint8_t* data, size_t size)
 
     if ((image = ASTC_LoadFromMemory(data, size)) != nullptr)
         return image;
-    
 
 #if defined(ALIMER_KTX)
     if ((image = KTX_LoadFromMemory(data, size)) != nullptr) 
@@ -302,7 +301,7 @@ AlimerImage* AlimerImage_CreateFromMemory(const uint8_t* data, size_t size)
     return NULL;
 }
 
-void AlimerImage_Destroy(AlimerImage* image)
+void alimerImageDestroy(AlimerImage* image)
 {
     if (!image)
         return;
@@ -313,7 +312,7 @@ void AlimerImage_Destroy(AlimerImage* image)
     free(image);
 }
 
-void AlimerImage_GetDesc(AlimerImage* image, ImageDesc* pDesc)
+void alimerImageGetDesc(AlimerImage* image, ImageDesc* pDesc)
 {
     ALIMER_ASSERT(image);
     ALIMER_ASSERT(pDesc);
@@ -372,7 +371,7 @@ void* AlimerImage_GetData(AlimerImage* image, size_t* size)
     return image->pData;
 }
 
-Bool32 AlimerImage_Save(AlimerImage* image, ImageFileFormat format, int quality, AlimerImageSaveCallback callback)
+bool alimerImageSave(AlimerImage* image, ImageFileFormat format, int quality, AlimerImageSaveCallback callback)
 {
     int res = 0;
     switch (format)

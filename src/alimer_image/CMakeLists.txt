@@ -14,6 +14,10 @@ if (ALIMER_SHARED_LIBRARY)
     target_compile_definitions (${TARGET_NAME} PRIVATE ALIMER_IMAGE_SHARED_LIBRARY=1)
 endif ()
 
+target_compile_definitions(${TARGET_NAME} PRIVATE ${COMPILER_DEFINES})
+target_compile_options(${TARGET_NAME} PRIVATE ${COMPILER_SWITCHES})
+target_link_options(${TARGET_NAME} PRIVATE ${LINKER_SWITCHES})
+
 target_include_directories(${TARGET_NAME}
 	PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>

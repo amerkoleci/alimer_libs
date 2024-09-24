@@ -49,7 +49,7 @@ set (ALIMER_VERSION ${ALIMER_VERSION_MAJOR}.${ALIMER_VERSION_MINOR}.${ALIMER_VER
 # Project declaration
 project (alimer_libs
     VERSION ${ALIMER_VERSION}
-    DESCRIPTION "Alimer C/C++ native libraries"
+    DESCRIPTION "Collection of C/C++ native libraries"
     HOMEPAGE_URL "https://github.com/amerkoleci/alimer_libs"
     LANGUAGES C CXX
 )
@@ -62,39 +62,6 @@ if (ALIMER_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_CONFIGURATION_TYPES})
 endif ()
 
-# Setting Platform
-if(EMSCRIPTEN)
-    set(ALIMER_PLATFORM_NAME "Web")
-elseif(ANDROID)
-    set(ALIMER_PLATFORM_NAME "Android")
-elseif(IOS)
-    set(ALIMER_PLATFORM_NAME "iOS")
-elseif(APPLE)
-    set(ALIMER_PLATFORM_NAME "macOS")
-elseif(WINDOWS_STORE)
-    set(ALIMER_PLATFORM_NAME "UWP")
-elseif(WIN32)
-    set(ALIMER_PLATFORM_NAME "Win32")
-elseif(UNIX)
-    set(ALIMER_PLATFORM_NAME "Unix")
-    set(ALIMER_LINUX_WSI_SELECTION "XCB" CACHE STRING "Select WSI target (XCB, XLIB, WAYLAND, D2D)")
-else()
-    message(FATAL_ERROR "Unrecognized platform: ${CMAKE_SYSTEM_NAME}")
-endif()
-
-# Setting Architecture
-if (DEFINED VCPKG_TARGET_ARCHITECTURE)
-    set(ALIMER_ARCH ${VCPKG_TARGET_ARCHITECTURE})
-elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Ww][Ii][Nn]32$")
-    set(ALIMER_ARCH x86)
-elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Xx]64$")
-    set(ALIMER_ARCH x64)
-elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Aa][Rr][Mm]$")
-    set(ALIMER_ARCH arm)
-elseif(CMAKE_GENERATOR_PLATFORM MATCHES "^[Aa][Rr][Mm]64$")
-    set(ALIMER_ARCH arm64)
-endif()
-
 # Options
 if (IOS OR EMSCRIPTEN)
     set(ALIMER_SHARED_LIBRARY OFF CACHE BOOL "Disable shared library on (IOS, WEB)" FORCE)
@@ -106,6 +73,9 @@ endif ()
 
 option(ALIMER_INSTALL "Generate the install target" ${ALIMER_MASTER_PROJECT})
 option(ALIMER_SAMPLES "Build samples" ${ALIMER_MASTER_PROJECT})
+option(ALIMER_IMAGE "Build image library" ${ALIMER_MASTER_PROJECT})
+option(ALIMER_AUDIO "Build audio library" ${ALIMER_MASTER_PROJECT})
+option(ALIMER_PHYSICS "Build physics library" ${ALIMER_MASTER_PROJECT})
 
 # Include common utilities
 include(GNUInstallDirs)
@@ -151,6 +121,7 @@ message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
 
 message(STATUS "Detected platform: ${ALIMER_PLATFORM_NAME}")
 message(STATUS "Detected architecture: ${ALIMER_ARCH}")
+message(STATUS "Detected host architecture: ${ALIMER_HOST_ARCH}")
 
 if (ALIMER_SHARED_LIBRARY)
     set(ALIMER_LIBRARY_TYPE SHARED)
