@@ -36,7 +36,6 @@
 .vs
 build
 bin
-lib
 
 # Sdk dir
 Sdk/
