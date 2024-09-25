@@ -192,8 +192,8 @@ typedef struct ImageDesc {
     uint32_t mipLevelCount;
 } ImageDesc;
 
-ALIMER_IMAGE_API AlimerImage* AlimerImage_Create2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t arrayLayers, uint32_t mipLevelCount);
-ALIMER_IMAGE_API AlimerImage* AlimerImage_CreateFromMemory(const uint8_t* data, size_t size);
+ALIMER_IMAGE_API AlimerImage* alimerImageCreate2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t arrayLayers, uint32_t mipLevelCount);
+ALIMER_IMAGE_API AlimerImage* alimerImageCreateFromMemory(const uint8_t* pData, size_t dataSize);
 ALIMER_IMAGE_API void alimerImageDestroy(AlimerImage* image);
 
 ALIMER_IMAGE_API void alimerImageGetDesc(AlimerImage* image, ImageDesc* pDesc);

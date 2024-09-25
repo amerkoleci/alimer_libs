@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 ALIMER_DISABLE_WARNINGS()
+
 #define STBI_ASSERT(x) ALIMER_ASSERT(x)
 //#define STBI_MALLOC(sz) alimer_alloc(sz)
 //#define STBI_REALLOC(p,newsz) alimer_realloc(p, newsz)
@@ -17,30 +18,17 @@ ALIMER_DISABLE_WARNINGS()
 #define STBI_NO_STDIO
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
-#include "third_party/stb_image.h"
-
-#define STBIW_ASSERT(x) ALIMER_ASSERT(x)
-//#define STBIW_MALLOC(sz) alimer_alloc(sz)
-//#define STBIW_REALLOC(p, newsz) alimer_realloc(p, newsz)
-//#define STBIW_FREE(p) alimer_free(p)
-#define STBI_WRITE_NO_STDIO
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "third_party/stb_image_write.h"
-
-#define TINYEXR_USE_MINIZ 0
-#define TINYEXR_USE_STB_ZLIB 1
-#define TINYEXR_IMPLEMENTATION
+#include <stb_image.h>
+#include <stb_image_write.h>
 #include "third_party/tinyexr.h"
 #define QOI_NO_STDIO
 #define QOI_IMPLEMENTATION
 //#define QOI_MALLOC(sz) STBI_MALLOC(sz)
 //#define QOI_FREE(p) STBI_FREE(p) 
 #include "third_party/qoi.h"
-
-#if defined(ALIMER_KTX)
+#if defined(ALIMER_IMAGE_KTX)
 #include <ktx.h>
 #endif
-
 ALIMER_ENABLE_WARNINGS()
 
 struct AlimerImage {
@@ -49,29 +37,29 @@ struct AlimerImage {
     void* pData;
 };
 
-static AlimerImage* DDS_LoadFromMemory(const uint8_t* data, size_t size)
+static AlimerImage* DDS_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
-    ALIMER_UNUSED(data);
-    ALIMER_UNUSED(size);
+    ALIMER_UNUSED(pData);
+    ALIMER_UNUSED(dataSize);
 
     return nullptr;
 }
 
-static AlimerImage* ASTC_LoadFromMemory(const uint8_t* data, size_t size)
+static AlimerImage* ASTC_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
-    ALIMER_UNUSED(data);
-    ALIMER_UNUSED(size);
+    ALIMER_UNUSED(pData);
+    ALIMER_UNUSED(dataSize);
 
     return nullptr;
 }
 
-#if defined(ALIMER_KTX)
-static AlimerImage* KTX_LoadFromMemory(const uint8_t* data, size_t size)
+#if defined(ALIMER_IMAGE_KTX)
+static AlimerImage* KTX_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
     ktxTexture* ktx_texture = 0;
     KTX_error_code ktx_result = ktxTexture_CreateFromMemory(
-        data,
-        size,
+        pData,
+        dataSize,
         KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
         &ktx_texture
     );
@@ -95,6 +83,15 @@ static AlimerImage* KTX_LoadFromMemory(const uint8_t* data, size_t size)
         }
         else
         {
+            // KTX1
+            ktxTexture1* ktx_texture1 = (ktxTexture1*)ktx_texture;
+
+            //format = FromVkFormat(vkGetFormatFromOpenGLInternalFormat(ktx_texture1->glInternalformat));
+
+            // KTX-1 files don't contain color space information. Color data is normally
+            // in sRGB, but the format we get back won't report that, so this will adjust it
+            // if necessary.
+            //format = LinearToSrgbFormat(format);
         }
     }
 
@@ -116,16 +113,57 @@ static AlimerImage* KTX_LoadFromMemory(const uint8_t* data, size_t size)
             ktx_texture->numLevels);
     }
 
-    //if (ktx_texture->baseDepth > 1)
-    //{
-    //    result->dimension = ImageDimension_3D;
-    //    result->depthOrArraySize = ktx_texture->baseDepth;
-    //}
-    //else
-    //{
-    //    result->dimension = ImageDimension_2D;
-    //    result->depthOrArraySize = ktx_texture->numLayers;
-    //}
+#if TODO
+    // If the texture contains more than one layer, then populate the offsets otherwise take the mipmap level offsets
+    if (ktx_texture->isCubemap || ktx_texture->isArray)
+    {
+        uint32_t layerCount = ktx_texture->isCubemap ? ktx_texture->numFaces : ktx_texture->numLayers;
+
+        for (uint32_t layer = 0; layer < layerCount; layer++)
+        {
+            for (uint32_t miplevel = 0; miplevel < ktx_texture->numLevels; miplevel++)
+            {
+                ktx_size_t     offset;
+                KTX_error_code result;
+                if (ktx_texture->isCubemap)
+                {
+                    result = ktxTexture_GetImageOffset(ktx_texture, miplevel, 0, layer, &offset);
+                }
+                else
+                {
+                    result = ktxTexture_GetImageOffset(ktx_texture, miplevel, layer, 0, &offset);
+                }
+
+                if (result != KTX_SUCCESS)
+                {
+                    //LOGF("Error loading KTX texture");
+                }
+
+                auto levelSize = ktxTexture_GetImageSize(ktx_texture, miplevel);
+                auto levelData = GetLevel(miplevel, layer);
+                memcpy(levelData->pixels, ktx_texture->pData + offset, levelSize);
+            }
+        }
+    }
+    else
+    {
+        for (uint32_t miplevel = 0; miplevel < ktx_texture->numLevels; miplevel++)
+        {
+            ktx_size_t     offset;
+            KTX_error_code result;
+            result = ktxTexture_GetImageOffset(ktx_texture, miplevel, 0, 0, &offset);
+            if (result != KTX_SUCCESS)
+            {
+                //LOGF("Error loading KTX texture");
+            }
+
+            auto levelSize = ktxTexture_GetImageSize(ktx_texture, miplevel);
+            auto levelData = GetLevel(miplevel);
+            memcpy(levelData->pixels, ktx_texture->pData + offset, levelSize);
+        }
+    }
+#endif // TODO
+
 
     result->dataSize = (uint32_t)ktx_texture->dataSize;
     result->pData = malloc(ktx_texture->dataSize);
@@ -135,15 +173,15 @@ static AlimerImage* KTX_LoadFromMemory(const uint8_t* data, size_t size)
 }
 #endif /* defined(ALIMER_KTX) */
 
-static AlimerImage* EXR_LoadFromMemory(const uint8_t* data, size_t size)
+static AlimerImage* EXR_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
-    if (!IsEXRFromMemory(data, size))
+    if (!IsEXRFromMemory(pData, dataSize))
         return NULL;
 
     float* pixelData;
     int width, height;
     const char* err = NULL;
-    int ret = LoadEXRFromMemory(&pixelData, &width, &height, data, size, &err);
+    int ret = LoadEXRFromMemory(&pixelData, &width, &height, pData, dataSize, &err);
     if (ret != TINYEXR_SUCCESS)
     {
         if (err)
@@ -156,7 +194,7 @@ static AlimerImage* EXR_LoadFromMemory(const uint8_t* data, size_t size)
     }
 
     // TODO: Allow conversion  to 16-bit (https://eliemichel.github.io/LearnWebGPU/advanced-techniques/hdr-textures.html)
-    AlimerImage* image = AlimerImage_Create2D(PixelFormat_RGBA32Float, width, height, 1, 1);
+    AlimerImage* image = alimerImageCreate2D(PixelFormat_RGBA32Float, width, height, 1, 1);
     image->dataSize = width * height * 4 * sizeof(float);
     image->pData = malloc(image->dataSize);
     memcpy(image->pData, pixelData, image->dataSize);
@@ -178,18 +216,18 @@ bool AlimerImage_TestQOI(const uint8_t* data, size_t size)
     return true;
 }
 
-static AlimerImage* QOI_LoadFromMemory(const uint8_t* data, size_t size)
+static AlimerImage* QOI_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
-    if (!AlimerImage_TestQOI(data, size))
+    if (!AlimerImage_TestQOI(pData, dataSize))
         return nullptr;
 
     int channels = 4;
     qoi_desc qoi_desc;
-    void* result = qoi_decode(data, (int)size, &qoi_desc, channels);
+    void* result = qoi_decode(pData, (int)dataSize, &qoi_desc, channels);
 
     if (result != nullptr)
     {
-        AlimerImage* image = AlimerImage_Create2D(PixelFormat_RGBA8Unorm, qoi_desc.width, qoi_desc.height, 1u, 1u);
+        AlimerImage* image = alimerImageCreate2D(PixelFormat_RGBA8Unorm, qoi_desc.width, qoi_desc.height, 1u, 1u);
         image->dataSize = qoi_desc.width * qoi_desc.height * channels * sizeof(uint8_t);
         image->pData = malloc(image->dataSize);
         memcpy(image->pData, result, image->dataSize);
@@ -202,15 +240,15 @@ static AlimerImage* QOI_LoadFromMemory(const uint8_t* data, size_t size)
 }
 
 
-static AlimerImage* STB_LoadFromMemory(const uint8_t* data, size_t size)
+static AlimerImage* STB_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
     int width, height, channels;
     PixelFormat format = PixelFormat_RGBA8Unorm;
     void* image_data;
     uint32_t memorySize = 0;
-    if (stbi_is_16_bit_from_memory(data, (int)size))
+    if (stbi_is_16_bit_from_memory(pData, (int)dataSize))
     {
-        image_data = stbi_load_16_from_memory(data, (int)size, &width, &height, &channels, 0);
+        image_data = stbi_load_16_from_memory(pData, (int)dataSize, &width, &height, &channels, 0);
         switch (channels)
         {
             case 1:
@@ -229,16 +267,16 @@ static AlimerImage* STB_LoadFromMemory(const uint8_t* data, size_t size)
                 assert(0);
         }
     }
-    else if (stbi_is_hdr_from_memory(data, (int)size))
+    else if (stbi_is_hdr_from_memory(pData, (int)dataSize))
     {
         // TODO: Allow conversion  to 16-bit (https://eliemichel.github.io/LearnWebGPU/advanced-techniques/hdr-textures.html)
-        image_data = stbi_loadf_from_memory(data, (int)size, &width, &height, NULL, 4);
+        image_data = stbi_loadf_from_memory(pData, (int)dataSize, &width, &height, NULL, 4);
         format = PixelFormat_RGBA32Float;
         memorySize = width * height * 4 * sizeof(float);
     }
     else
     {
-        image_data = stbi_load_from_memory(data, (int)size, &width, &height, NULL, 4);
+        image_data = stbi_load_from_memory(pData, (int)dataSize, &width, &height, NULL, 4);
         format = PixelFormat_RGBA8Unorm;
         memorySize = width * height * 4 * sizeof(uint8_t);
     }
@@ -247,7 +285,7 @@ static AlimerImage* STB_LoadFromMemory(const uint8_t* data, size_t size)
         return NULL;
     }
 
-    AlimerImage* result = AlimerImage_Create2D(format, width, height, 1u, 1u);
+    AlimerImage* result = alimerImageCreate2D(format, width, height, 1u, 1u);
     result->dataSize = memorySize;
     result->pData = malloc(memorySize);
     memcpy(result->pData, image_data, memorySize);
@@ -255,7 +293,7 @@ static AlimerImage* STB_LoadFromMemory(const uint8_t* data, size_t size)
     return result;
 }
 
-AlimerImage* AlimerImage_Create2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t arrayLayers, uint32_t mipLevelCount)
+AlimerImage* alimerImageCreate2D(PixelFormat format, uint32_t width, uint32_t height, uint32_t arrayLayers, uint32_t mipLevelCount)
 {
     if (format == PixelFormat_Undefined || !width || !height || !arrayLayers)
         return NULL;
@@ -274,28 +312,28 @@ AlimerImage* AlimerImage_Create2D(PixelFormat format, uint32_t width, uint32_t h
     return image;
 }
 
-AlimerImage* AlimerImage_CreateFromMemory(const uint8_t* data, size_t size)
+AlimerImage* alimerImageCreateFromMemory(const uint8_t* pData, size_t dataSize)
 {
     AlimerImage* image = NULL;
 
-    if ((image = DDS_LoadFromMemory(data, size)) != nullptr)
+    if ((image = DDS_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 
-    if ((image = ASTC_LoadFromMemory(data, size)) != nullptr)
+    if ((image = ASTC_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 
-#if defined(ALIMER_KTX)
-    if ((image = KTX_LoadFromMemory(data, size)) != nullptr) 
+#if defined(ALIMER_IMAGE_KTX)
+    if ((image = KTX_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 #endif
 
-    if ((image = EXR_LoadFromMemory(data, size)) != nullptr) 
+    if ((image = EXR_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 
-    if ((image = QOI_LoadFromMemory(data, size)) != nullptr)
+    if ((image = QOI_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 
-    if ((image = STB_LoadFromMemory(data, size)) != nullptr) 
+    if ((image = STB_LoadFromMemory(pData, dataSize)) != nullptr)
         return image;
 
     return NULL;

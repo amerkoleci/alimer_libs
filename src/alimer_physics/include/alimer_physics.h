@@ -33,6 +33,8 @@
 #include <stddef.h>
 
 typedef struct PhysicsWorld PhysicsWorld;
+typedef struct PhysicsBody PhysicsBody;
+typedef struct PhysicsMaterial PhysicsMaterial;
 
 typedef struct WorldInfo {
     uint32_t maxBodies;

@@ -73,9 +73,10 @@ endif ()
 
 option(ALIMER_INSTALL "Generate the install target" ${ALIMER_MASTER_PROJECT})
 option(ALIMER_SAMPLES "Build samples" ${ALIMER_MASTER_PROJECT})
-option(ALIMER_IMAGE "Build image library" ${ALIMER_MASTER_PROJECT})
-option(ALIMER_AUDIO "Build audio library" ${ALIMER_MASTER_PROJECT})
-option(ALIMER_PHYSICS "Build physics library" ${ALIMER_MASTER_PROJECT})
+option(ALIMER_IMAGE "Build image library" ON)
+option(ALIMER_IMAGE_KTX "Build image with ktx support" ON)
+option(ALIMER_AUDIO "Build audio library" ON)
+option(ALIMER_PHYSICS "Build physics library" ON)
 
 # Include common utilities
 include(GNUInstallDirs)
@@ -110,6 +111,9 @@ else ()
     )
 endif ()
 
+# Source
+add_subdirectory (src)
+
 # Print current build configuration
 message(STATUS "Engine version: ${ALIMER_VERSION}")
 message(STATUS "GIT Revision ID: ${ALIMER_REVISION_ID}")
@@ -130,6 +134,3 @@ else ()
     set(ALIMER_LIBRARY_TYPE STATIC)
     message(STATUS "  Library         STATIC")
 endif ()
-
-# Source
-add_subdirectory (src)

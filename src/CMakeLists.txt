@@ -5,6 +5,9 @@ target_sources(alimer_common INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/alimer_common/alimer_internal.h"
 )
 
+# Third party libs
+add_subdirectory(third_party)
+
 # image library
 if (ALIMER_IMAGE)
     add_subdirectory(alimer_image)
@@ -25,6 +28,8 @@ if (ALIMER_PHYSICS)
         GIT_SHALLOW ON
         SOURCE_SUBDIR Build
         OPTIONS
+            "DOUBLE_PRECISION OFF"
+            "GENERATE_DEBUG_SYMBOLS OFF"
             "ENABLE_INSTALL OFF"
             "ENABLE_ALL_WARNINGS OFF"
             "USE_STATIC_MSVC_RUNTIME_LIBRARY OFF"

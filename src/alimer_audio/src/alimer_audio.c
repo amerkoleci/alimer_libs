@@ -13,6 +13,7 @@ ALIMER_DISABLE_WARNINGS()
 #define MA_ENABLE_COREAUDIO
 #define MA_ENABLE_OPENSL
 #define MA_ENABLE_WEBAUDIO
+
 //#define MA_ENGINE_MAX_LISTENERS ALIMER_AUDIO_MAX_LISTENERS
 #include "third_party/miniaudio.h"
 #include "third_party/miniaudio_libvorbis.h"
