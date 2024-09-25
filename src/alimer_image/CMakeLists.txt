@@ -3,7 +3,7 @@ set (TARGET_NAME alimer_image)
 
 set(SOURCE_FILES
     include/alimer_image.h
-    src/alimer_image.cpp
+    src/alimer_image.c
     src/third_party/third_party.cpp
 )
 

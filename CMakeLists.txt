@@ -78,6 +78,12 @@ option(ALIMER_IMAGE_KTX "Build image with ktx support" ON)
 option(ALIMER_AUDIO "Build audio library" ON)
 option(ALIMER_PHYSICS "Build physics library" ON)
 
+if (ALIMER_SHARED_LIBRARY)
+    set(ALIMER_LIBRARY_TYPE SHARED)
+else ()
+    set(ALIMER_LIBRARY_TYPE STATIC)
+endif ()
+
 # Include common utilities
 include(GNUInstallDirs)
 include(cmake/CPM.cmake)
@@ -128,9 +134,7 @@ message(STATUS "Detected architecture: ${ALIMER_ARCH}")
 message(STATUS "Detected host architecture: ${ALIMER_HOST_ARCH}")
 
 if (ALIMER_SHARED_LIBRARY)
-    set(ALIMER_LIBRARY_TYPE SHARED)
     message(STATUS "  Library         SHARED")
 else ()
     set(ALIMER_LIBRARY_TYPE STATIC)
-    message(STATUS "  Library         STATIC")
 endif ()

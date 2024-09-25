@@ -6,20 +6,16 @@
 #include <stdio.h>
 
 ALIMER_DISABLE_WARNINGS()
-
-#define STBI_ASSERT(x) ALIMER_ASSERT(x)
-//#define STBI_MALLOC(sz) alimer_alloc(sz)
-//#define STBI_REALLOC(p,newsz) alimer_realloc(p, newsz)
-//#define STBI_FREE(p) alimer_free(p)
-#define STBI_NO_PSD
-#define STBI_NO_PIC
-#define STBI_NO_PNM
-#define STBI_NO_FAILURE_STRINGS
-#define STBI_NO_STDIO
-#define STB_IMAGE_STATIC
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#define STBIW_ASSERT(x) ALIMER_ASSERT(x)
+//#define STBIW_MALLOC(sz) alimer_alloc(sz)
+//#define STBIW_REALLOC(p, newsz) alimer_realloc(p, newsz)
+//#define STBIW_FREE(p) alimer_free(p)
+#define STBI_WRITE_NO_STDIO
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
+
 #include "third_party/tinyexr.h"
 #define QOI_NO_STDIO
 #define QOI_IMPLEMENTATION
@@ -42,7 +38,7 @@ static AlimerImage* DDS_LoadFromMemory(const uint8_t* pData, size_t dataSize)
     ALIMER_UNUSED(pData);
     ALIMER_UNUSED(dataSize);
 
-    return nullptr;
+    return NULL;
 }
 
 static AlimerImage* ASTC_LoadFromMemory(const uint8_t* pData, size_t dataSize)
@@ -50,7 +46,7 @@ static AlimerImage* ASTC_LoadFromMemory(const uint8_t* pData, size_t dataSize)
     ALIMER_UNUSED(pData);
     ALIMER_UNUSED(dataSize);
 
-    return nullptr;
+    return NULL;
 }
 
 #if defined(ALIMER_IMAGE_KTX)
@@ -219,13 +215,13 @@ bool AlimerImage_TestQOI(const uint8_t* data, size_t size)
 static AlimerImage* QOI_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
     if (!AlimerImage_TestQOI(pData, dataSize))
-        return nullptr;
+        return NULL;
 
     int channels = 4;
     qoi_desc qoi_desc;
     void* result = qoi_decode(pData, (int)dataSize, &qoi_desc, channels);
 
-    if (result != nullptr)
+    if (result != NULL)
     {
         AlimerImage* image = alimerImageCreate2D(PixelFormat_RGBA8Unorm, qoi_desc.width, qoi_desc.height, 1u, 1u);
         image->dataSize = qoi_desc.width * qoi_desc.height * channels * sizeof(uint8_t);
@@ -236,9 +232,8 @@ static AlimerImage* QOI_LoadFromMemory(const uint8_t* pData, size_t dataSize)
         return image;
     }
 
-    return nullptr;
+    return NULL;
 }
-
 
 static AlimerImage* STB_LoadFromMemory(const uint8_t* pData, size_t dataSize)
 {
@@ -316,24 +311,24 @@ AlimerImage* alimerImageCreateFromMemory(const uint8_t* pData, size_t dataSize)
 {
     AlimerImage* image = NULL;
 
-    if ((image = DDS_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = DDS_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 
-    if ((image = ASTC_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = ASTC_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 
 #if defined(ALIMER_IMAGE_KTX)
-    if ((image = KTX_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = KTX_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 #endif
 
-    if ((image = EXR_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = EXR_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 
-    if ((image = QOI_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = QOI_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 
-    if ((image = STB_LoadFromMemory(pData, dataSize)) != nullptr)
+    if ((image = STB_LoadFromMemory(pData, dataSize)) != NULL)
         return image;
 
     return NULL;
